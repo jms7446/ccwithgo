@@ -21,19 +21,29 @@ func readInt() int {
 	}
 	return x
 }
-func readInt2() (int, int)      { return readInt(), readInt() }
-func readInt3() (int, int, int) { return readInt(), readInt(), readInt() }
 
 func readIntsN(n int) []int {
-	var ints = make([]int, 0, n)
-	for i := 0; i < n; i++ {
-		ints = append(ints, readInt())
+	var ints = make([]int, n)
+	for i := range ints {
+		ints[i] = readInt()
 	}
 	return ints
 }
 
+func min(xs ...int) int {
+	ret := xs[0]
+	for i := 1; i < len(xs); i++ {
+		if xs[i] < ret {
+			ret = xs[i]
+		}
+	}
+	return ret
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 func main() {
-	N, M := readInt2()
+	N, M := readInt(), readInt()
 	K := readInt()
 	nums := readIntsN(K)
 	fmt.Println(N, M, K)
