@@ -1,0 +1,143 @@
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"strings"
+)
+
+var reader *bufio.Reader = bufio.NewReader(os.Stdin)
+var writer *bufio.Writer = bufio.NewWriter(os.Stdout)
+
+func printf(f string, a ...interface{}) { fmt.Fprintf(writer, f, a...) }
+func scanf(f string, a ...interface{})  { fmt.Fscanf(reader, f, a...) }
+
+func minMax(array []int) (int, int) {
+	var max = array[0]
+	var min = array[0]
+	for _, value := range array {
+		if max < value {
+			max = value
+		}
+		if min > value {
+			min = value
+		}
+	}
+	return min, max
+}
+
+func maxInt(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func removeCharacters(input string, characters string) string {
+	filter := func(r rune) rune {
+		if strings.IndexRune(characters, r) < 0 {
+			return r
+		}
+		return -1
+	}
+
+	return strings.Map(filter, input)
+
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+func w2i(w byte) int {
+	return int(w - 'a')
+}
+
+func find(curIdx int, charCountLeft int) int {
+	ret := 0
+	// indent := strings.Repeat(" ", len(validChars)-charCountLeft)
+	// fmt.Printf("%scurIdx: %d, left: %d, %+v\n", indent, curIdx, charCountLeft, leftCounts)
+	if charCountLeft == 0 || curIdx >= len(validChars) {
+		// fmt.Printf("%s=>curIdx: %d, empty, return 0\n", indent, curIdx)
+		return 0
+	}
+
+	caseCount := 0
+	for _, w := range containWords[validChars[curIdx]] {
+		leftCounts[w]--
+		if leftCounts[w] == 0 {
+			caseCount++
+		}
+	}
+	caseCount += find(curIdx+1, charCountLeft-1)
+	for _, w := range containWords[validChars[curIdx]] {
+		leftCounts[w]++
+	}
+
+	excludeCount := 0
+	if curIdx <= len(validChars)-charCountLeft-1 {
+		excludeCount = find(curIdx+1, charCountLeft)
+	}
+
+	ret = maxInt(caseCount, excludeCount)
+	// fmt.Printf("%s=>curIdx: %d, ret: %d, case: %d, exc: %d\n", indent, curIdx, ret, caseCount, excludeCount)
+	return ret
+}
+
+func solve(n int, k int, words []string) int {
+	if k < 0 {
+		return 0
+	}
+
+	leftCounts = make([]int, n)
+	containWords = make([][]int, A)
+
+	for i, word := range words {
+		uniq := make([]bool, A)
+		for j := 0; j < len(word); j++ {
+			uniq[w2i(word[j])] = true
+		}
+		for j, b := range uniq {
+			if b {
+				leftCounts[i]++
+				containWords[j] = append(containWords[j], i)
+			}
+		}
+	}
+	validChars = make([]int, 0)
+	for i, xs := range containWords {
+		if len(xs) > 0 {
+			validChars = append(validChars, i)
+		}
+	}
+	// fmt.Println("left count :", leftCounts)
+	// fmt.Println("containWords :", containWords)
+	// fmt.Println("validCars :", validChars)
+
+	return find(0, k)
+}
+
+// A : size of Alphabet
+const A = 26
+
+var leftCounts []int
+var containWords [][]int
+var validChars []int
+
+func main() {
+	defer writer.Flush()
+
+	var n, k int
+	scanf("%d %d\n", &n, &k)
+
+	words := make([]string, n)
+	var s string
+	for i := range words {
+		scanf("%s\n", &s)
+		// s = removeCharacters(s, ".")
+		// s = removeCharacters(s, "antic")
+		words[i] = s
+	}
+	// k -= 5
+	// fmt.Println(words)
+	printf("%d\n", solve(n, k, words))
+}

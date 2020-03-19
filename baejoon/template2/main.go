@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strings"
 )
 
 var reader *bufio.Reader = bufio.NewReader(os.Stdin)
@@ -24,6 +25,18 @@ func minMax(array []int) (int, int) {
 		}
 	}
 	return min, max
+}
+
+func removeCharacters(input string, characters string) string {
+	filter := func(r rune) rune {
+		if strings.IndexRune(characters, r) < 0 {
+			return r
+		}
+		return -1
+	}
+
+	return strings.Map(filter, input)
+
 }
 
 ////////////////////////////////////////////////////////////////////////////////
