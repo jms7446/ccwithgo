@@ -23,60 +23,79 @@ func (p Pos) inBound() bool {
 	return 0 <= p.r && p.r < R && 0 <= p.c && p.c < C
 }
 
-func (p Pos) add(other Pos) Pos {
+func (p Pos) move(other Pos) Pos {
 	return Pos{p.r + other.r, p.c + other.c}
 }
 
-func solve(prob []string) int {
-	jq := make([]Pos, 0)
-	fq := make([]Pos, 0)
-	visited := make([][]bool, R)
-	for i := range visited {
-		visited[i] = make([]bool, C)
-	}
-	for r, str := range prob {
+func initProb(rawProb []string) (prob [][]byte, jPos Pos, fPoses []Pos) {
+	fPoses = make([]Pos, 0)
+	prob = make([][]byte, R)
+	for r, str := range rawProb {
+		prob[r] = make([]byte, C)
 		for c := range str {
-			if str[c] == 'J' {
-				jq = append(jq, Pos{r, c})
-				visited[r][c] = true
-			} else if str[c] == 'F' {
-				fq = append(fq, Pos{r, c})
-				visited[r][c] = true
+			mark := str[c]
+			prob[r][c] = mark
+			if mark == 'J' {
+				jPos = Pos{r, c}
+			} else if mark == 'F' {
+				fPoses = append(fPoses, Pos{r, c})
 			}
 		}
+	}
+	return
+}
+
+func fireMove(fq []Pos, prob [][]byte) []Pos {
+	newFq := make([]Pos, 0)
+	for _, curPos := range fq {
+		for _, d := range directions {
+			pos := curPos.move(d)
+			if pos.inBound() && prob[pos.r][pos.c] == '.' {
+				prob[pos.r][pos.c] = 'F'
+				newFq = append(newFq, pos)
+			}
+		}
+	}
+	return newFq
+}
+
+func jMove(jq []Pos, prob [][]byte) ([]Pos, bool) {
+	newJq := make([]Pos, 0)
+	for _, curPos := range jq {
+		for _, d := range directions {
+			pos := curPos.move(d)
+			if !pos.inBound() {
+				return nil, true
+			} else if prob[pos.r][pos.c] == '.' {
+				prob[pos.r][pos.c] = 'J'
+				newJq = append(newJq, pos)
+			}
+		}
+	}
+	return newJq, false
+}
+
+func solve(rawProb []string) int {
+	prob, jPos, fPoses := initProb(rawProb)
+
+	jq := make([]Pos, 0)
+	jq = append(jq, jPos)
+	prob[jPos.r][jPos.c] = 'J'
+
+	fq := make([]Pos, 0)
+	for _, p := range fPoses {
+		fq = append(fq, p)
+		prob[p.r][p.c] = 'F'
 	}
 
 	stepCount := 0
+	var success bool
 	for len(jq) > 0 {
 		stepCount++
-
-		fqSize := len(fq)
-		for i := 0; i < fqSize; i++ {
-			curPos := fq[0]
-			fq = fq[1:]
-			for _, d := range directions {
-				pos := curPos.add(d)
-				if pos.inBound() && prob[pos.r][pos.c] != '#' && !visited[pos.r][pos.c] {
-					visited[pos.r][pos.c] = true
-					fq = append(fq, pos)
-				}
-			}
-		}
-
-		jqSize := len(jq)
-		for i := 0; i < jqSize; i++ {
-			curPos := jq[0]
-			jq = jq[1:]
-			for _, d := range directions {
-				pos := curPos.add(d)
-				if !pos.inBound() {
-					return stepCount
-				}
-				if !visited[pos.r][pos.c] && prob[pos.r][pos.c] == '.' {
-					visited[pos.r][pos.c] = true
-					jq = append(jq, pos)
-				}
-			}
+		fq = fireMove(fq, prob)
+		jq, success = jMove(jq, prob)
+		if success {
+			return stepCount
 		}
 	}
 	return -1
