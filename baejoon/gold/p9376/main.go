@@ -13,173 +13,195 @@ var writer *bufio.Writer = bufio.NewWriter(os.Stdout)
 func printf(f string, a ...interface{}) { fmt.Fprintf(writer, f, a...) }
 func scanf(f string, a ...interface{})  { fmt.Fscanf(reader, f, a...) }
 
-func minMax(array []int) (int, int) {
-	var max = array[0]
-	var min = array[0]
-	for _, value := range array {
-		if max < value {
-			max = value
-		}
-		if min > value {
-			min = value
-		}
+// IntMax :
+const IntMax = int(^uint(0) >> 1)
+
+// MinInt :
+func MinInt(a, b int) int {
+	if a < b {
+		return a
 	}
-	return min, max
-}
-
-func removeCharacters(input string, characters string) string {
-	filter := func(r rune) rune {
-		if strings.IndexRune(characters, r) < 0 {
-			return r
-		}
-		return -1
-	}
-
-	return strings.Map(filter, input)
-
+	return b
 }
 
 ////////////////////////////////////////////////////////////////////////////////
 
-// Pos :
-type Pos struct {
+// Point :
+type Point struct {
 	r, c int
 }
 
-func (p Pos) move(x Pos) Pos {
-	return Pos{p.r + x.r, p.c + x.c}
+func (p Point) move(x Point) Point {
+	return Point{p.r + x.r, p.c + x.c}
 }
 
-func (p Pos) inBound() bool {
+func (p Point) inBound() bool {
 	return 0 <= p.r && p.r < R && 0 <= p.c && p.c < C
 }
 
-func (p Pos) getMark(smap [][]byte) byte {
+func (p Point) getMark(smap []string) byte {
 	if p.inBound() {
 		return smap[p.r][p.c]
 	}
 	return '*'
 }
 
-func (p Pos) setMark(smap [][]byte, mark byte) {
+func (p Point) setMark(smap [][]byte, mark byte) {
 	if p.inBound() {
 		smap[p.r][p.c] = mark
 	}
 }
 
-var directions = []Pos{Pos{0, 1}, Pos{1, 0}, Pos{0, -1}, Pos{-1, 0}}
+func (p Point) getCost(arr [][]int) int {
+	return arr[p.r][p.c]
+}
 
-func makeMap(prob []string) [][]byte {
-	smap := make([][]byte, R)
-	for r, row := range prob {
-		smap[r] = make([]byte, C)
-		for c := range row {
-			smap[r][c] = row[c]
+func (p Point) setCost(arr [][]int, cost int) {
+	arr[p.r][p.c] = cost
+}
+
+func (p Point) getCostSum(arrs [][][]int) int {
+	costSum := 0
+	for _, arr := range arrs {
+		cost := p.getCost(arr)
+		if cost == IntMax {
+			return IntMax
+		}
+		costSum += cost
+	}
+	return costSum
+}
+
+// PointStack :
+type PointStack []Point
+
+func (s *PointStack) push(e Point) {
+	*s = append(*s, e)
+}
+
+func (s *PointStack) pop() Point {
+	ret := (*s)[len(*s)-1]
+	*s = (*s)[:len(*s)-1]
+	return ret
+}
+
+func makeCostMap(n int) [][][]int {
+	costMap := make([][][]int, n)
+	for k := 0; k < n; k++ {
+		costMap[k] = make([][]int, R)
+		for i := 0; i < R; i++ {
+			costMap[k][i] = make([]int, C)
+			for j := 0; j < C; j++ {
+				costMap[k][i][j] = IntMax
+			}
 		}
 	}
-	return smap
+	return costMap
 }
 
-// SearchInfo :
-type SearchInfo struct {
-	pos     Pos
-	history []Pos
+func findPoints(prob []string, target byte) []Point {
+	prisoners := make([]Point, 0)
+	for i := 0; i < R; i++ {
+		for j := 0; j < C; j++ {
+			if prob[i][j] == target {
+				prisoners = append(prisoners, Point{i, j})
+			}
+		}
+	}
+	return prisoners
 }
 
-func newSearchInfo(pos Pos, preHistory []Pos) SearchInfo {
-	history := make([]Pos, len(preHistory))
-	copy(history, preHistory)
-	history = append(history, pos)
-	return SearchInfo{pos, history}
+func allEmpty(ques [][]Point) bool {
+	for _, que := range ques {
+		if len(que) > 0 {
+			return false
+		}
+	}
+	return true
 }
 
-// InfoQueue :
-type InfoQueue []SearchInfo
-
-func (q InfoQueue) push(s SearchInfo) InfoQueue {
-	return append(q, s)
+func calcCost(pos Point, mark byte, costMap [][][]int) int {
+	costSum := pos.getCostSum(costMap)
+	if costSum < IntMax {
+		if mark == '#' {
+			return costSum - 2
+		}
+		return costSum
+	}
+	return costSum
 }
 
-func (q InfoQueue) pop() (InfoQueue, SearchInfo) {
-	return q[1:], q[0]
-}
-
-// PosStack :
-type PosStack []Pos
-
-func (s PosStack) push(p Pos) PosStack {
-	return append(s, p)
-}
-
-func (s PosStack) pop() (PosStack, Pos) {
-	l := len(s)
-	return s[:l-1], s[l-1]
-}
-
-func searchStep(smap [][]byte, que []SearchInfo) (InfoQueue, []Pos) {
-	newQue := make([]SearchInfo, 0)
-	for _, info := range que {
-		stack := PosStack{info.pos}
-		var curPos Pos
-		for len(stack) > 0 {
-			stack, curPos = stack.pop()
-			for _, d := range directions {
-				pos := curPos.move(d)
-				mark := pos.getMark(smap)
-				pos.setMark(smap, '*')
-				if mark == '*' {
-					continue
-				} else if mark == '#' {
-					newQue = append(newQue, newSearchInfo(pos, info.history))
-				} else if mark == '$' {
-					newInfo := newSearchInfo(pos, info.history)
-					return nil, newInfo.history
-				} else if mark == '.' {
-					stack = stack.push(pos)
+func takeStep(startPos Point, step int, costs [][]int, prob []string) []Point {
+	que := make([]Point, 0)
+	stack := PointStack{startPos}
+	for len(stack) > 0 {
+		curPos := stack.pop()
+		for _, direction := range directions {
+			pos := curPos.move(direction)
+			if !pos.inBound() {
+				continue
+			}
+			mark := pos.getMark(prob)
+			cost := pos.getCost(costs)
+			if cost != IntMax || mark == '*' {
+				continue
+			}
+			if mark == '#' {
+				pos.setCost(costs, step+1)
+				que = append(que, pos)
+			} else {
+				pos.setCost(costs, step)
+				stack.push(pos)
+				if mark == '$' {
+					que = append(que, pos)
 				}
 			}
-
 		}
 	}
-	return newQue, nil
-}
-
-func search(smap [][]byte, start Pos) []Pos {
-	var successHistory []Pos
-	que := InfoQueue{SearchInfo{start, make([]Pos, 0)}}
-	for len(que) > 0 {
-		que, successHistory = searchStep(smap, que)
-		if successHistory != nil {
-			return successHistory
-		}
-	}
-	return nil
-}
-
-func unlockDoors(smap [][]byte, history []Pos) {
-	for _, pos := range history {
-		pos.setMark(smap, '.')
-	}
+	return que
 }
 
 func solve(prob []string) int {
-	var smap [][]byte
-	start := Pos{0, 0}
+	// (N * R * C)
+	costMap := makeCostMap(N)
 
-	smap = makeMap(prob)
-	preHistory := search(smap, start)
-	fmt.Println(preHistory)
+	starts := append(findPoints(prob, '$'), Point{0, 0})
+	ques := make([][]Point, N)
+	for i, start := range starts {
+		ques[i] = []Point{start}
+	}
 
-	smap = makeMap(prob)
-	unlockDoors(smap, preHistory)
-	PostHistory := search(smap, start)
-	fmt.Println(PostHistory)
-
-	return len(preHistory) + len(PostHistory) - 2
+	minTotalCost := IntMax
+	for step := 0; !allEmpty(ques) && step < minTotalCost; step++ {
+		for i := 0; i < N; i++ {
+			nextQue := make([]Point, 0)
+			for _, curPos := range ques[i] {
+				mark := curPos.getMark(prob)
+				cost := calcCost(curPos, mark, costMap)
+				// printf("step: %02d, cost: %d\n", step, cost)
+				minTotalCost = MinInt(minTotalCost, cost)
+				if step == 0 || mark == '#' {
+					poss := takeStep(curPos, step, costMap[i], prob)
+					for _, pos := range poss {
+						nextQue = append(nextQue, pos)
+					}
+				}
+			}
+			ques[i] = nextQue
+		}
+	}
+	return minTotalCost
 }
 
+// N :
+const N = 3
+
 var (
-	R, C int
+	// R :
+	R int
+	// C :
+	C          int
+	directions = []Point{Point{0, 1}, Point{1, 0}, Point{0, -1}, Point{-1, 0}}
 )
 
 func main() {

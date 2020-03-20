@@ -39,6 +39,11 @@ func removeCharacters(input string, characters string) string {
 
 }
 
+const UintMax = ^uint(0)
+const UnitMin = 0
+const IntMax = int(^uint(0) >> 1)
+const IntMin = -IntMax - 1
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func main() {
