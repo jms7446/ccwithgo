@@ -146,35 +146,37 @@ type Info struct {
 
 func solve() int {
 	visited := makeMultiVisited(NUM_MAP)
-	start := findMark(prob, '0')
-	que := Queue{Info{start[0], 0}}
+	start := findMark(prob, '0')[0]
+	que := Queue{Info{start, 0}}
 	step := 0
 	for len(que) > 0 {
-		numQue := len(que)
 		step++
+		numQue := len(que)
 		for i := 0; i < numQue; i++ {
 			curInfo := que.pop().(Info)
+			curPos := curInfo.pos
+			keyIndex := curInfo.keyIndex
 			for _, d := range directions {
-				pos := curInfo.pos.move(d)
-				if !pos.inBound() || pos.isVisited(visited[curInfo.keyIndex]) {
+				pos := curPos.move(d)
+				if !pos.inBound() || pos.isVisited(visited[keyIndex]) {
 					continue
 				}
-				pos.setVisited(visited[curInfo.keyIndex])
+				pos.setVisited(visited[keyIndex])
 				mark := pos.getMark(prob)
 				if mark == '1' {
 					return step
 				} else if mark == '#' {
 					continue
 				} else if mark == '.' || mark == '0' {
-					que.push(Info{pos, curInfo.keyIndex})
+					que.push(Info{pos, keyIndex})
 				} else if 'A' <= mark && mark <= 'F' {
-					if hasKey(mark, curInfo.keyIndex) {
-						que.push(Info{pos, curInfo.keyIndex})
+					if hasKey(mark, keyIndex) {
+						que.push(Info{pos, keyIndex})
 					}
 				} else if 'a' <= mark && mark <= 'f' {
-					keyIndex := getKeyIndex(mark, curInfo.keyIndex)
-					que.push(Info{pos, keyIndex})
-					pos.setVisited(visited[keyIndex])
+					nextKeyIndex := getKeyIndex(mark, keyIndex)
+					que.push(Info{pos, nextKeyIndex})
+					pos.setVisited(visited[nextKeyIndex])
 				}
 			}
 		}
