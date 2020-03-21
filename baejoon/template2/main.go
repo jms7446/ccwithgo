@@ -44,6 +44,12 @@ const UnitMin = 0
 const IntMax = int(^uint(0) >> 1)
 const IntMin = -IntMax - 1
 
+func printProb(prob []string) {
+	for _, s := range prob {
+		printf("%s\n", s)
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func main() {
