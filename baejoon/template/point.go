@@ -11,6 +11,8 @@ func (p Point) move(x Point) Point {
 	return Point{p.r + x.r, p.c + x.c}
 }
 
+var directions = []Point{Point{0, 1}, Point{1, 0}, Point{0, -1}, Point{-1, 0}}
+
 func (p Point) inBound() bool {
 	return 0 <= p.r && p.r < R && 0 <= p.c && p.c < C
 }

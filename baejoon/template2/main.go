@@ -50,6 +50,32 @@ func printProb(prob []string) {
 	}
 }
 
+// Stack :
+type Stack []Point
+
+func (s *Stack) push(e Point) {
+	*s = append(*s, e)
+}
+
+func (s *Stack) pop() Point {
+	ret := (*s)[len(*s)-1]
+	*s = (*s)[:len(*s)-1]
+	return ret
+}
+
+// Queue :
+type Queue []interface{}
+
+func (q *Queue) push(e interface{}) {
+	*q = append(*q, e)
+}
+
+func (q *Queue) pop() interface{} {
+	ret := (*q)[0]
+	*q = (*q)[1:]
+	return ret
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 
 func main() {
