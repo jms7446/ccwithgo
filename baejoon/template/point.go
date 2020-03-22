@@ -1,8 +1,6 @@
 package template
 
-////////////////////////////////////////////////////////////////////////////////
 // Point :
-
 type Point struct {
 	r, c int
 }
@@ -24,6 +22,10 @@ func (p Point) getMark(prob []string) byte {
 	return '*'
 }
 
+func (p Point) isVisited(visited [][]bool) bool {
+	return visited[p.r][p.c]
+}
+
 func (p Point) setVisited(visited [][]bool) {
 	if p.inBound() {
 		visited[p.r][p.c] = true
@@ -42,19 +44,41 @@ func findMark(prob []string, mark byte) []Point {
 	return points
 }
 
-func printProb(prob []string) {
-	for _, s := range prob {
-		printf("%s\n", s)
+func readMapProb(R, C int) []string {
+	prob := make([]string, R)
+	var s string
+	for i := 0; i < R; i++ {
+		scanf("%s\n", &s)
+		prob[i] = s
 	}
+	return prob
 }
 
-func makeMultiVisited(n int) [][][]bool {
-	visited := make([][][]bool, n)
-	for i := 0; i < n; i++ {
-		visited[i] = make([][]bool, R)
-		for r := 0; r < R; r++ {
-			visited[i][r] = make([]bool, C)
-		}
+func makeVisited(R, C int) [][]bool {
+	visited := make([][]bool, R)
+	for r := 0; r < R; r++ {
+		visited[r] = make([]bool, C)
 	}
 	return visited
+}
+
+func makeMultiVisited(R, C, n int) [][][]bool {
+	visited := make([][][]bool, n)
+	for i := 0; i < n; i++ {
+		visited[i] = makeVisited(R, C)
+	}
+	return visited
+}
+
+func printVisited(visited [][]bool) {
+	for _, row := range visited {
+		for _, b := range row {
+			if b {
+				printf("O")
+			} else {
+				printf("X")
+			}
+		}
+		printf("\n")
+	}
 }
