@@ -51,13 +51,13 @@ func printProb(prob []string) {
 }
 
 // Stack :
-type Stack []Point
+type Stack []interface{}
 
-func (s *Stack) push(e Point) {
+func (s *Stack) push(e interface{}) {
 	*s = append(*s, e)
 }
 
-func (s *Stack) pop() Point {
+func (s *Stack) pop() interface{} {
 	ret := (*s)[len(*s)-1]
 	*s = (*s)[:len(*s)-1]
 	return ret
